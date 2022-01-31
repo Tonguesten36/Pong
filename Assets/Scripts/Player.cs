@@ -11,6 +11,7 @@ namespace Pong
         [SerializeField] private float playerMoveSpeed;
         
         private float computerMoveSpeed;
+        private float offset = 1f;
         
         [SerializeField] private KeyCode moveUp;
         [SerializeField] private KeyCode moveDown;
@@ -22,6 +23,8 @@ namespace Pong
         
         private Ball ball;
         private Player humanPlayer;
+        private Rigidbody2D rigidbodyAI;
+
         #endregion
 
         private void Start()
@@ -30,7 +33,10 @@ namespace Pong
             {
                 ball = GameObject.FindGameObjectWithTag("Ball").GetComponent<Ball>();
                 humanPlayer = GameObject.FindGameObjectWithTag("PlayerLeft").GetComponent<Player>();
-                computerMoveSpeed = playerMoveSpeed - 2f;
+                rigidbodyAI = GetComponent<Rigidbody2D>();
+
+                computerMoveSpeed = 30f;
+                
                 if(ball == null)
                 {
                     Debug.LogError("whoops");
@@ -41,7 +47,12 @@ namespace Pong
                     Debug.LogError("player not found");
                     throw new UnityException("Couldn't find" + humanPlayer.name);
                 }
-
+                if(rigidbodyAI == null){
+                    Debug.LogError("rigidbody not found on ai");
+                }
+                else{
+                    Debug.Log("Found the rigidbody on ai");
+                }
             }
         }
 
@@ -75,7 +86,7 @@ namespace Pong
                 }
                 else
                 {
-                    ComputerVelocity(computerMoveSpeed);
+                    ComputerMovement();
                 }
             }
             else if(this.gameObject.CompareTag("PlayerLeft"))
@@ -86,7 +97,7 @@ namespace Pong
                 }
                 else
                 {
-                    ComputerVelocity(computerMoveSpeed);
+                    ComputerMovement();
                 }
             }
         }
@@ -100,43 +111,34 @@ namespace Pong
             transform.Translate(velocity * Time.deltaTime);
         }
         #endregion
-        #region Computer
-        private void ComputerVelocity(float moveSpeed)
+        #region Computer      
+        //AI Movement
+        private void ComputerMovement()
         {
-            Vector2 movement = new Vector2(0, ball.transform.position.y);
-            Vector2 velocity = movement;
-            transform.Translate(velocity * Time.deltaTime);
+            if (ball.transform.position.y > this.transform.position.y)
+            {
+                if (rigidbodyAI.velocity.y < 0) rigidbodyAI.velocity = Vector2.zero;
+                rigidbodyAI.velocity = Vector2.Lerp(rigidbodyAI.velocity, Vector2.up * computerMoveSpeed * offset, 1f * Time.deltaTime);
+            }
+            else if (ball.transform.position.y < this.transform.position.y)
+            {
+                if (rigidbodyAI.velocity.y > 0) rigidbodyAI.velocity = Vector2.zero;
+                rigidbodyAI.velocity = Vector2.Lerp(rigidbodyAI.velocity, Vector2.down * computerMoveSpeed * offset, 1f * Time.deltaTime);
+            }
+            else
+            {
+                rigidbodyAI.velocity = Vector2.Lerp(rigidbodyAI.velocity, Vector2.zero * computerMoveSpeed * offset, 1f * Time.deltaTime);
+            }
         }
-        // This coroutine will be activated after it touched the ball (**only use for the AI**)
-        //private IEnumerator RandomMovement()
-        //{
-        //    for(int i = 0; i < 2; i++)
-        //    {
-        //        float randomMoveDirection = Random.Range(0f, 1f);
-        //        if(randomMoveDirection < 0.5f)
-        //        {
-        //            computerMoveDirection = -1;
-        //        }
-        //        else
-        //        {
-        //            computerMoveDirection = -1f;
-        //        }
-        //    }
-        //        yield return new WaitForSeconds(2f);
-        //}
-        #endregion
+        private void OnCollisionEnter(Collision other) 
+        {
+            if(!isHumanOrComputer)
+            {
+                offset = Random.Range(0.5f, 1f);
+            }
+        }
 
-        private void OnCollisionEnter2D(Collision2D collision)
-        {
-            //if (!isHumanOrComputer)
-            //{
-            //    if (collision.collider.CompareTag("Ball"))
-            //    {
-            //        computerMoveSpeed = 10f;
-            //        StartCoroutine(RandomMovement());
-            //    }
-            //}
-        }
+        #endregion
 
     }
 }
